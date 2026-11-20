@@ -1,0 +1,111 @@
+@import './styles/moods.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  min-height: 100%;
+  background-color: var(--mood-bg);
+}
+
+body {
+  min-height: 100%;
+  background-color: var(--mood-bg);
+  color: var(--mood-ink);
+  font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  transition:
+    background-color 600ms ease,
+    color 600ms ease;
+}
+
+/* ---- Haze backdrop (plain CSS layers, no images or SVG) ---- */
+
+.haze-root {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.haze-layer {
+  position: absolute;
+  left: -15%;
+  width: 130%;
+  filter: blur(36px);
+  will-change: transform;
+}
+
+/* Thin, high band sitting at the very top of the page */
+.haze-band-top {
+  top: 0;
+  height: calc(10% + var(--mood-haze) * 26%);
+  background: linear-gradient(
+    to bottom,
+    rgba(var(--mood-accent-rgb), calc(0.25 + var(--mood-haze) * 0.4)),
+    rgba(var(--mood-accent-rgb), 0)
+  );
+  animation: haze-drift-slow 90s ease-in-out infinite alternate;
+}
+
+/* Mid band that lowers and thickens as the haze value grows */
+.haze-band-mid {
+  top: calc(4% + var(--mood-haze) * 16%);
+  height: calc(8% + var(--mood-haze) * 30%);
+  background: linear-gradient(
+    to bottom,
+    rgba(var(--mood-accent-rgb), 0),
+    rgba(var(--mood-accent-rgb), calc(var(--mood-haze) * 0.35)),
+    rgba(var(--mood-accent-rgb), 0)
+  );
+  animation: haze-drift-fast 65s ease-in-out infinite alternate;
+}
+
+/* Soft radial pocket drifting near the top-left */
+.haze-pocket-one {
+  top: calc(2% + var(--mood-haze) * 10%);
+  height: calc(16% + var(--mood-haze) * 30%);
+  background: radial-gradient(
+    ellipse at 30% 30%,
+    rgba(var(--mood-accent-rgb), calc(0.15 + var(--mood-haze) * 0.35)),
+    rgba(var(--mood-accent-rgb), 0) 70%
+  );
+  animation: haze-drift-fast 60s ease-in-out infinite alternate-reverse;
+}
+
+/* Soft radial pocket drifting near the top-right */
+.haze-pocket-two {
+  top: calc(6% + var(--mood-haze) * 22%);
+  height: calc(14% + var(--mood-haze) * 34%);
+  background: radial-gradient(
+    ellipse at 70% 40%,
+    rgba(var(--mood-accent-rgb), calc(0.1 + var(--mood-haze) * 0.3)),
+    rgba(var(--mood-accent-rgb), 0) 65%
+  );
+  animation: haze-drift-slow 80s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes haze-drift-slow {
+  from {
+    transform: translateX(-3.5%);
+  }
+  to {
+    transform: translateX(3.5%);
+  }
+}
+
+@keyframes haze-drift-fast {
+  from {
+    transform: translateX(3%);
+  }
+  to {
+    transform: translateX(-3%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .haze-layer {
+    animation: none;
+  }
+}

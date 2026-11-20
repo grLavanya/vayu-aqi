@@ -1,0 +1,37 @@
+/*
+  Mood palette for the India CPCB AQI scale.
+  Every mood colour lives here — swap any value in one line.
+*/
+
+:root,
+[data-mood='clear'] {
+  --mood-bg: #eef6f4;
+  --mood-accent: #2f8f83;
+  --mood-accent-rgb: 47, 143, 131;
+  --mood-ink: #17332f;
+  --mood-haze: 0.15;
+}
+
+[data-mood='hazy'] {
+  --mood-bg: #f7f1e3;
+  --mood-accent: #b8893b;
+  --mood-accent-rgb: 184, 137, 59;
+  --mood-ink: #3a2e14;
+  --mood-haze: 0.4;
+}
+
+[data-mood='heavy'] {
+  --mood-bg: #f3e6dd;
+  --mood-accent: #a8643a;
+  --mood-accent-rgb: 168, 100, 58;
+  --mood-ink: #3b2418;
+  --mood-haze: 0.65;
+}
+
+[data-mood='dense'] {
+  --mood-bg: #e9e4f0;
+  --mood-accent: #5b4b8a;
+  --mood-accent-rgb: 91, 75, 138;
+  --mood-ink: #241b3d;
+  --mood-haze: 0.9;
+}
