@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Wind } from 'lucide-react';
 import LocationBar from './components/LocationBar';
 import AqiHero from './components/AqiHero';
 import ProfileChips from './components/ProfileChips';
@@ -55,7 +56,14 @@ export default function App() {
 
       <div className="relative z-10 mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-12">
         <header className="flex flex-col gap-6">
-          <h1 className="text-3xl font-bold tracking-tight">Saans</h1>
+          <h1 className="flex items-center gap-2.5 text-3xl font-bold tracking-tight">
+            <Wind
+              className="h-7 w-7"
+              style={{ color: 'var(--mood-accent)' }}
+              aria-hidden="true"
+            />
+            <span>Vayu</span>
+          </h1>
           <LocationBar reading={reading} onChange={setReading} />
         </header>
 
@@ -75,7 +83,7 @@ export default function App() {
         </main>
 
         <footer className="pb-16 text-center text-xs opacity-60">
-          Saans informs, it doesn't replace medical advice.
+          Vayu informs, it doesn't replace medical advice.
         </footer>
       </div>
 
