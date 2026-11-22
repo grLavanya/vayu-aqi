@@ -1,7 +1,7 @@
 export interface AqiReading {
   aqi: number;
   pm25: number;
-  pm10: number;
+  pm10: number | null;
   city: string;
   source: string;
   station: string;

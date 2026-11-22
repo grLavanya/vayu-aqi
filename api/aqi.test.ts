@@ -388,7 +388,7 @@ describe('API /api/aqi handler', () => {
 
     expect(jsonBody.source).toBe('OpenAQ');
     expect(jsonBody.pm25).toBe(60);
-    expect(jsonBody.pm10).toBe(0);
+    expect(jsonBody.pm10).toBeNull();
     // PM2.5=60 corresponds to AQI 100 (if stale PM10=300 was used it would have been AQI 250)
     expect(jsonBody.aqi).toBe(100);
   });

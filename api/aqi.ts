@@ -4,7 +4,7 @@ import { calculateCpcbAqi } from '../src/lib/cpcbAqi';
 export interface AqiResponse {
   aqi: number;
   pm25: number;
-  pm10: number;
+  pm10: number | null;
   city: string;
   source: string;
   station: string;
@@ -273,11 +273,11 @@ export default async function handler(
             const pm10Val =
               freshPm10.length > 0
                 ? Math.round(freshPm10[0].value * 10) / 10
-                : 0;
+                : null;
 
             const aqi = calculateCpcbAqi({
               pm25: pm25Val,
-              pm10: pm10Val > 0 ? pm10Val : null,
+              pm10: pm10Val,
             });
 
             if (aqi !== null) {
@@ -334,11 +334,11 @@ export default async function handler(
         const pm10Val =
           typeof current.pm10 === 'number'
             ? Math.round(current.pm10 * 10) / 10
-            : 0;
+            : null;
 
         const aqi = calculateCpcbAqi({
           pm25: typeof current.pm2_5 === 'number' ? pm25Val : null,
-          pm10: typeof current.pm10 === 'number' ? pm10Val : null,
+          pm10: pm10Val,
         });
 
         if (aqi !== null) {

@@ -33,6 +33,7 @@ export default function InfoSections({ plan }: InfoSectionsProps) {
           {(plan?.swaps ?? []).map((swap) => (
             <li key={swap.title} className="rounded-xl border border-black/[0.06] bg-white/80 p-4">
               <h3 className="text-[15px] font-semibold leading-snug">{swap.title}</h3>
+              {swap.why && <p className="mt-1 text-xs opacity-75">{swap.why}</p>}
               <p className="mt-1.5 text-sm leading-relaxed opacity-70">{swap.impact}</p>
             </li>
           ))}

@@ -46,7 +46,7 @@ export default function AqiHero({ reading }: AqiHeroProps) {
             : ''} · Updated {formatUpdatedAgo(reading.timestamp)}
         </p>
         <p className="text-[11px] opacity-75">
-          CPCB AQI estimated from the latest PM2.5/PM10 reading
+          CPCB AQI estimated from the latest {reading.pm10 !== null ? 'PM2.5/PM10' : 'PM2.5'} reading
         </p>
         {isModelled && (
           <p className="mt-1 text-[11px] opacity-80">

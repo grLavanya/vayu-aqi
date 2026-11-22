@@ -11,12 +11,18 @@ Create a `.env.local` file in the root of the project (this file is excluded by 
 | Variable | Description | Required? |
 |---|---|---|
 | `OPENAQ_API_KEY` | API key for OpenAQ v3 (`X-API-Key` header). Enables fetching live physical ground station data across India. | Optional (Recommended). If omitted, Vayu gracefully falls back to Open-Meteo modelled CAMS data. |
+| `GEMINI_API_KEY` | API key for Google Gemini generative AI. Used to generate personalized daily action plans based on real AQI readings and household profiles. | Optional (Recommended). If omitted, Vayu automatically uses a calm, pure rule-based fallback plan. |
+| `GEMINI_MODEL` | Gemini model identifier used for plan generation. Defaults to `gemini-3.1-flash-lite`. | Optional. Default: `gemini-3.1-flash-lite`. |
 
-To get a free OpenAQ key:
-1. Sign up at [https://explore.openaq.org/register](https://explore.openaq.org/register).
-2. Copy your API key into `.env.local`:
+To configure your API keys:
+1. **OpenAQ**: Sign up at [https://explore.openaq.org/register](https://explore.openaq.org/register).
+2. **Gemini**: Obtain an API key from [Google AI Studio](https://aistudio.google.com/).
+3. Copy your API keys into `.env.local`:
    ```bash
    OPENAQ_API_KEY=your_openaq_api_key_here
+   GEMINI_API_KEY=your_gemini_api_key_here
+   # Optional: customize model (defaults to gemini-3.1-flash-lite)
+   GEMINI_MODEL=gemini-3.1-flash-lite
    ```
 
 ---

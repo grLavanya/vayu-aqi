@@ -35,6 +35,7 @@ export default function App() {
 
   const [profile, setProfile] = useState<HouseholdProfile>(EMPTY_PROFILE);
   const [plan, setPlan] = useState<Plan | null>(null);
+  const [planLoading, setPlanLoading] = useState(false);
   const [devAqi, setDevAqi] = useState<number | null>(null);
 
   const handleSelectLocation = useCallback(
@@ -82,9 +83,32 @@ export default function App() {
   useEffect(() => {
     if (!reading) {
       setPlan(null);
+      setPlanLoading(false);
       return;
     }
-    void getPlan(reading, profile).then(setPlan);
+
+    const controller = new AbortController();
+    setPlanLoading(true);
+
+    const timer = setTimeout(async () => {
+      try {
+        const nextPlan = await getPlan(reading, profile, controller.signal);
+        setPlan(nextPlan);
+      } catch (err: any) {
+        if (!controller.signal.aborted) {
+          console.error('Plan fetch error:', err);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setPlanLoading(false);
+        }
+      }
+    }, 800); // 800 ms debounce
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [reading, profile]);
 
   const mood = reading ? moodFromAqi(reading.aqi) : 'clear';
@@ -196,7 +220,7 @@ export default function App() {
           {/* Today's plan & Tips (visible once reading is available) */}
           {reading && (
             <>
-              <PlanSheet plan={plan} />
+              <PlanSheet plan={plan} loading={planLoading} city={reading?.city} />
               <InfoSections plan={plan} />
             </>
           )}
