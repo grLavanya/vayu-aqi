@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { moodFromAqi } from '../src/lib/mood';
+import { moodFromAqi, moodInfo } from '../src/lib/mood';
 import { generateRulePlan, type Plan } from '../src/lib/rulePlan';
 import { validateAndGuardPlan } from '../src/lib/planGuard';
 import {
@@ -62,6 +62,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const source = reading.source;
   const station = reading.station;
   const ageMinutes = reading.ageMinutes;
+  const distanceKm: number | undefined =
+    typeof reading.distanceKm === 'number' && !isNaN(reading.distanceKm)
+      ? reading.distanceKm
+      : undefined;
 
   if (typeof aqi !== 'number' || isNaN(aqi) || aqi < 0 || aqi > 500) {
     return res.status(400).json({ error: 'Invalid AQI: must be between 0 and 500.' });
@@ -138,10 +142,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // 4. Gemini Call with 15-second timeout & structured output
   try {
+    const bandName = moodInfo(moodFromAqi(aqi)).label; // "Clear" | "Hazy" | "Heavy" | "Dense"
     const userPrompt = buildPlanUserPrompt({
-      reading: { aqi, pm25, pm10, source, station, ageMinutes, city },
+      reading: { aqi, pm25, pm10, source, station, distanceKm, ageMinutes, city },
       profile: { chips },
       localHour,
+      bandName,
     });
 
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
@@ -190,7 +196,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const parsed = JSON.parse(rawText);
 
     // 5. Guard: Schema validation and numeric hallucination check
-    const guardedPlan = validateAndGuardPlan(parsed, { aqi, pm25, pm10 });
+    const guardedPlan = validateAndGuardPlan(parsed, { aqi, pm25, pm10, distanceKm });
     if (!guardedPlan) {
       console.warn('[api/plan] Plan failed guard validation (schema or AQI/PM mismatch). Falling back to rules.');
       throw new Error('Guard validation failed');

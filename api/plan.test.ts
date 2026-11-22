@@ -219,28 +219,40 @@ describe('API /api/plan handler', () => {
   it('caches Gemini plan and returns cacheHit: true on second request without invoking fetch again', async () => {
     process.env.GEMINI_API_KEY = 'test_key';
     const mockPlan = {
-      summary: 'Air is hazy today in Delhi.',
+      summary: 'Air is heavy today in Delhi.',
       morning: [
         { title: 'You could delay morning runs', why: 'Air quality index is 180.' },
-        { title: 'Keep windows closed', why: 'Prevents indoor accumulation.' },
+        { title: 'Keep windows closed', why: 'Prevents outdoor particles coming inside.' },
       ],
       afternoon: [
-        { title: 'A lighter choice indoors', why: 'Particles linger outdoors.' },
-        { title: 'Stay hydrated', why: 'Sooths throats.' },
+        { title: 'A lighter choice indoors', why: 'Particles linger in heavy outdoor air.' },
+        { title: 'Stay hydrated', why: 'Keeps airways moist and comfortable.' },
       ],
       evening: [
-        { title: 'Consider indoor board games', why: 'Evening temperatures trap particles.' },
-        { title: 'Air purifier in bedroom', why: 'Circulates clean air before bed.' },
+        { title: 'Consider indoor board games', why: 'Evening traffic adds fresh particles to the air.' },
+        { title: 'Air purifier in bedroom', why: 'Circulates clean air before bedtime.' },
       ],
       indoor: [
-        { title: 'Keep doors sealed', why: 'Reduces draft particles.' },
-        { title: 'Wet mop floors', why: 'Gathers settled dust.' },
-        { title: 'Run air cleaner', why: 'Lowers particulate count.' },
+        { title: 'Keep doors sealed', why: 'Reduces draft carrying outdoor particles inside.' },
+        { title: 'Wet mop floors', why: 'Gathers settled dust instead of lifting it.' },
+        { title: 'Run air cleaner', why: 'Filters fine particles from room air.' },
       ],
       swaps: [
-        { title: 'Metro instead of auto', why: 'Reduces direct smoke inhalation.', impact: 'About 25% lower exposure' },
-        { title: 'Yoga indoors', why: 'Maintains activity safely.', impact: 'Roughly 30% reduction' },
-        { title: 'Online errands', why: 'Avoids midday traffic.', impact: 'About 15% less exposure' },
+        {
+          title: 'Metro instead of auto rickshaw',
+          why: 'Enclosed cabin keeps you away from direct roadside exhaust.',
+          impact: 'Fewer exhaust particles in your breathing zone during the ride.',
+        },
+        {
+          title: 'Indoor yoga instead of outdoor run',
+          why: 'Deep breathing outdoors in heavy air draws in more particles.',
+          impact: 'Activity continues with noticeably less particle intake.',
+        },
+        {
+          title: 'Damp mop instead of dry broom',
+          why: 'Dry sweeping resuspends settled dust back into the breathing zone.',
+          impact: 'Dust stays trapped in the cloth rather than floating back up.',
+        },
       ],
       safetyNote: null,
     };

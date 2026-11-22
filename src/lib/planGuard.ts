@@ -114,15 +114,82 @@ export function checkAqiPmHallucinations(
   return true;
 }
 
+/**
+ * Reject any text that contains invented quantitative figures:
+ * percentages, kg, litres, "times", "fold", or standalone numbers
+ * that are NOT one of the permitted provided values.
+ *
+ * Permitted numbers: the provided AQI, PM2.5, PM10 (when non-null),
+ * station distance, and hour-of-day figures (0–23).
+ */
+export function checkInventedNumbers(
+  plan: Plan,
+  reading: { aqi: number; pm25: number; pm10: number | null; distanceKm?: number },
+): boolean {
+  const textSnippets: string[] = [
+    plan.summary,
+    ...plan.morning.flatMap((a) => [a.title, a.why]),
+    ...plan.afternoon.flatMap((a) => [a.title, a.why]),
+    ...plan.evening.flatMap((a) => [a.title, a.why]),
+    ...plan.indoor.flatMap((a) => [a.title, a.why]),
+    ...plan.swaps.flatMap((s) => [s.title, s.why, s.impact]),
+    plan.safetyNote || '',
+  ];
+  const fullText = textSnippets.join(' ');
+
+  // 1. Reject banned unit/ratio words
+  const bannedWords =
+    /\b(?:percent|per\s+cent|kilogram|kg|litre|liter|times\s+(?:more|less))\b|fold\b|%/gi;
+  if (bannedWords.test(fullText)) return false;
+
+  // Standalone " L " as a litre abbreviation (space-bounded, uppercase)
+  if (/\s\d+\s*L\b/.test(fullText)) return false;
+
+  // 2. Collect the set of permitted numeric values
+  const permitted = new Set<number>([
+    Math.round(reading.aqi),
+    Math.round(reading.pm25),
+    // Allow fractional PM2.5 too
+    reading.pm25,
+  ]);
+  if (reading.pm10 !== null) {
+    permitted.add(Math.round(reading.pm10));
+    permitted.add(reading.pm10);
+  }
+  if (reading.distanceKm != null) {
+    permitted.add(reading.distanceKm);
+    permitted.add(Math.round(reading.distanceKm));
+  }
+  // Hours 0–23 are always permitted
+  for (let h = 0; h <= 23; h++) permitted.add(h);
+
+  // 3. Find all standalone numbers in the text; reject any not in permitted set.
+  // We skip numbers that look like years (4-digit ≥ 2000) or ordinals.
+  const numRegex = /\b(\d+(?:\.\d+)?)\b/g;
+  let m: RegExpExecArray | null;
+  while ((m = numRegex.exec(fullText)) !== null) {
+    const raw = m[1];
+    const val = parseFloat(raw);
+    // Allow 4-digit years
+    if (/^\d{4}$/.test(raw) && val >= 2000) continue;
+    // Allow numbers in permitted set (with small floating-point tolerance)
+    if ([...permitted].some((p) => Math.abs(p - val) < 0.6)) continue;
+    // Any other standalone number is forbidden
+    return false;
+  }
+
+  return true;
+}
+
 export function validateAndGuardPlan(
   data: any,
-  reading: { aqi: number; pm25: number; pm10: number | null },
+  reading: { aqi: number; pm25: number; pm10: number | null; distanceKm?: number },
 ): Plan | null {
   const parsed = validatePlanSchema(data);
   if (!parsed) return null;
 
-  const passedGuard = checkAqiPmHallucinations(parsed, reading);
-  if (!passedGuard) return null;
+  if (!checkAqiPmHallucinations(parsed, reading)) return null;
+  if (!checkInventedNumbers(parsed, reading)) return null;
 
   return parsed;
 }

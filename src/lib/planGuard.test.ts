@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   checkAqiPmHallucinations,
+  checkInventedNumbers,
   validateAndGuardPlan,
   validatePlanSchema,
 } from './planGuard';
+
+// ─── Shared fixture ───────────────────────────────────────────────────────────
 
 const VALID_SAMPLE_PLAN = {
   summary: 'Outdoor air is pleasantly fresh today — a lovely day for open windows.',
@@ -25,12 +28,28 @@ const VALID_SAMPLE_PLAN = {
     { title: 'Keep purifier in living area.', why: 'Cleans occupied room best.' },
   ],
   swaps: [
-    { title: 'Swap short drive for walk.', why: 'Reduces neighborhood emissions.', impact: 'Roughly 1 km of exhaust saved.' },
-    { title: 'Swap idle for switch off.', why: 'Prevents stationary exhaust.', impact: 'About half a litre fuel saved.' },
-    { title: 'Swap spray for cloth wipe.', why: 'Avoids aerosol propellants.', impact: 'Lower indoor chemical particles.' },
+    {
+      title: 'Swap open burning for bagged disposal.',
+      why: 'Burning releases dense smoke at ground level.',
+      impact: 'No smoke plume added to already hazy air near your home.',
+    },
+    {
+      title: 'Swap dry broom for a damp mop.',
+      why: 'Dry sweeping lifts settled dust back into the air.',
+      impact: 'Dust stays trapped in the cloth rather than floating back up.',
+    },
+    {
+      title: 'Run the kitchen chimney while cooking.',
+      why: 'Cooking fumes are a major short-term indoor particle source.',
+      impact: 'Fumes clear faster instead of dispersing through the room.',
+    },
   ],
   safetyNote: null,
 };
+
+const BASE_READING = { aqi: 45, pm25: 12, pm10: 25, distanceKm: 2.1 };
+
+// ─── validatePlanSchema ───────────────────────────────────────────────────────
 
 describe('planGuard', () => {
   describe('validatePlanSchema', () => {
@@ -97,18 +116,19 @@ describe('planGuard', () => {
     });
   });
 
+  // ─── checkAqiPmHallucinations ─────────────────────────────────────────────
+
   describe('checkAqiPmHallucinations', () => {
     const reading = { aqi: 120, pm25: 45.2, pm10: 80 };
 
     it('passes when text contains no conflicting AQI or PM numbers', () => {
-      const plan = { ...VALID_SAMPLE_PLAN };
-      expect(checkAqiPmHallucinations(plan, reading)).toBe(true);
+      expect(checkAqiPmHallucinations(VALID_SAMPLE_PLAN, reading)).toBe(true);
     });
 
     it('passes when text mentions the exact provided AQI number', () => {
       const plan = {
         ...VALID_SAMPLE_PLAN,
-        summary: 'With an AQI of 120 today, outdoor air carries moderate dust.',
+        summary: 'With an AQI of 120 today, outdoor air carries some haze.',
       };
       expect(checkAqiPmHallucinations(plan, reading)).toBe(true);
     });
@@ -139,19 +159,157 @@ describe('planGuard', () => {
     });
   });
 
+  // ─── checkInventedNumbers ─────────────────────────────────────────────────
+
+  describe('checkInventedNumbers', () => {
+    it('passes a clean plan with only qualitative impact text', () => {
+      expect(checkInventedNumbers(VALID_SAMPLE_PLAN, BASE_READING)).toBe(true);
+    });
+
+    it('passes when only provided values (AQI, PM2.5, PM10, distance) appear', () => {
+      const plan = {
+        ...VALID_SAMPLE_PLAN,
+        summary: `With an AQI of ${BASE_READING.aqi} today, the air is clear.`,
+        swaps: [
+          {
+            title: 'You could skip the drive today.',
+            why: `The station is ${BASE_READING.distanceKm} km away and air is clean.`,
+            impact: 'Fewer exhaust particles near your route.',
+          },
+          ...VALID_SAMPLE_PLAN.swaps.slice(1),
+        ],
+      };
+      expect(checkInventedNumbers(plan, BASE_READING)).toBe(true);
+    });
+
+    it('rejects text containing a "%" character', () => {
+      const plan = {
+        ...VALID_SAMPLE_PLAN,
+        swaps: [
+          { title: 'Swap X', why: 'Valid why.', impact: 'Reduces exposure by 40%.' },
+          VALID_SAMPLE_PLAN.swaps[1],
+          VALID_SAMPLE_PLAN.swaps[2],
+        ],
+      };
+      expect(checkInventedNumbers(plan, BASE_READING)).toBe(false);
+    });
+
+    it('rejects text containing the word "percent"', () => {
+      const plan = {
+        ...VALID_SAMPLE_PLAN,
+        swaps: [
+          { title: 'Swap X', why: 'Valid why.', impact: 'Reduces exposure by forty percent.' },
+          VALID_SAMPLE_PLAN.swaps[1],
+          VALID_SAMPLE_PLAN.swaps[2],
+        ],
+      };
+      expect(checkInventedNumbers(plan, BASE_READING)).toBe(false);
+    });
+
+    it('rejects text containing "per cent" (two words)', () => {
+      const plan = {
+        ...VALID_SAMPLE_PLAN,
+        swaps: [
+          { title: 'Swap X', why: 'Valid why.', impact: 'Lower by thirty per cent.' },
+          VALID_SAMPLE_PLAN.swaps[1],
+          VALID_SAMPLE_PLAN.swaps[2],
+        ],
+      };
+      expect(checkInventedNumbers(plan, BASE_READING)).toBe(false);
+    });
+
+    it('rejects text containing "kg" or "kilogram"', () => {
+      const plan = {
+        ...VALID_SAMPLE_PLAN,
+        swaps: [
+          { title: 'Swap X', why: 'Valid why.', impact: 'Saves 2 kg of CO2 per trip.' },
+          VALID_SAMPLE_PLAN.swaps[1],
+          VALID_SAMPLE_PLAN.swaps[2],
+        ],
+      };
+      expect(checkInventedNumbers(plan, BASE_READING)).toBe(false);
+    });
+
+    it('rejects text containing "litre" or "liter"', () => {
+      const plan = {
+        ...VALID_SAMPLE_PLAN,
+        swaps: [
+          { title: 'Swap X', why: 'Valid why.', impact: 'About half a litre of fuel saved.' },
+          VALID_SAMPLE_PLAN.swaps[1],
+          VALID_SAMPLE_PLAN.swaps[2],
+        ],
+      };
+      expect(checkInventedNumbers(plan, BASE_READING)).toBe(false);
+    });
+
+    it('rejects text containing "times more" or "times less"', () => {
+      const plan = {
+        ...VALID_SAMPLE_PLAN,
+        swaps: [
+          { title: 'Swap X', why: 'You breathe times more particles outdoors.', impact: 'Better air inside.' },
+          VALID_SAMPLE_PLAN.swaps[1],
+          VALID_SAMPLE_PLAN.swaps[2],
+        ],
+      };
+      expect(checkInventedNumbers(plan, BASE_READING)).toBe(false);
+    });
+
+    it('rejects text containing "fold" (e.g. "threefold" or "3-fold")', () => {
+      const plan = {
+        ...VALID_SAMPLE_PLAN,
+        swaps: [
+          { title: 'Swap X', why: 'Valid why.', impact: 'Threefold lower exposure.' },
+          VALID_SAMPLE_PLAN.swaps[1],
+          VALID_SAMPLE_PLAN.swaps[2],
+        ],
+      };
+      expect(checkInventedNumbers(plan, BASE_READING)).toBe(false);
+    });
+
+    it('rejects an invented standalone number not in the provided reading', () => {
+      // 500 is not in the reading (aqi=45, pm25=12, pm10=25, dist=2.1)
+      const plan = {
+        ...VALID_SAMPLE_PLAN,
+        swaps: [
+          { title: 'Swap X', why: 'Valid why.', impact: 'You avoid 500 extra particles.' },
+          VALID_SAMPLE_PLAN.swaps[1],
+          VALID_SAMPLE_PLAN.swaps[2],
+        ],
+      };
+      expect(checkInventedNumbers(plan, BASE_READING)).toBe(false);
+    });
+  });
+
+  // ─── validateAndGuardPlan ─────────────────────────────────────────────────
+
   describe('validateAndGuardPlan', () => {
     it('returns the validated plan if both schema and guard pass', () => {
-      const result = validateAndGuardPlan(VALID_SAMPLE_PLAN, { aqi: 45, pm25: 12, pm10: 25 });
+      const result = validateAndGuardPlan(VALID_SAMPLE_PLAN, BASE_READING);
       expect(result).not.toBeNull();
     });
 
-    it('returns null if schema fails or guard fails', () => {
-      expect(validateAndGuardPlan(null, { aqi: 45, pm25: 12, pm10: 25 })).toBeNull();
+    it('returns null if schema fails', () => {
+      expect(validateAndGuardPlan(null, BASE_READING)).toBeNull();
+    });
+
+    it('returns null if AQI hallucination check fails', () => {
       const hallucinated = {
         ...VALID_SAMPLE_PLAN,
         summary: 'AQI of 480 reported today.',
       };
-      expect(validateAndGuardPlan(hallucinated, { aqi: 45, pm25: 12, pm10: 25 })).toBeNull();
+      expect(validateAndGuardPlan(hallucinated, BASE_READING)).toBeNull();
+    });
+
+    it('returns null if invented-number check fails (percentage in impact)', () => {
+      const withPercent = {
+        ...VALID_SAMPLE_PLAN,
+        swaps: [
+          { title: 'Swap X', why: 'Valid.', impact: 'Saves 30% exposure.' },
+          VALID_SAMPLE_PLAN.swaps[1],
+          VALID_SAMPLE_PLAN.swaps[2],
+        ],
+      };
+      expect(validateAndGuardPlan(withPercent, BASE_READING)).toBeNull();
     });
   });
 });
