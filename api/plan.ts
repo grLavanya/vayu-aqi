@@ -1,12 +1,12 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { moodFromAqi, moodInfo } from '../src/lib/mood';
-import { generateRulePlan, type Plan } from '../src/lib/rulePlan';
-import { validateAndGuardPlan } from '../src/lib/planGuard';
+import { moodFromAqi, moodInfo } from '../src/lib/mood.js';
+import { generateRulePlan, type Plan } from '../src/lib/rulePlan.js';
+import { validateAndGuardPlan } from '../src/lib/planGuard.js';
 import {
   PLAN_RESPONSE_SCHEMA,
   PLAN_SYSTEM_PROMPT,
   buildPlanUserPrompt,
-} from '../src/prompts/planPrompt';
+} from '../src/prompts/planPrompt.js';
 
 const VALID_CHIPS = new Set([
   'youngChildren',

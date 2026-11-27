@@ -1,4 +1,4 @@
-import { moodFromAqi, type Mood } from './mood';
+import { moodFromAqi, type Mood } from './mood.js';
 
 export interface PlanAction {
   title: string;
