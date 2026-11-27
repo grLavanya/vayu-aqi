@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { calculateCpcbAqi } from '../src/lib/cpcbAqi.js';
+type TimedValue = { value: unknown; timeMs: number };
 
 export interface AqiResponse {
   aqi: number;
@@ -68,6 +69,8 @@ export default async function handler(
   const openAqKey = process.env.OPENAQ_API_KEY?.trim();
   const keyPresent = Boolean(openAqKey);
   let fallbackReason = '';
+  // Diagnostics (key status, internal error text) are for local debugging only.
+  const exposeDiagnostics = process.env.VERCEL_ENV !== 'production';
 
   // 1. PRIMARY SOURCE: OpenAQ v3
   if (!openAqKey) {
@@ -224,12 +227,12 @@ export default async function handler(
                 return { value: m.value, timeMs };
               })
               .filter(
-                (m) =>
+                (m: TimedValue) =>
                   typeof m.value === 'number' &&
                   m.timeMs > 0 &&
                   now - m.timeMs <= threeHoursMs,
               )
-              .sort((a, b) => b.timeMs - a.timeMs);
+              .sort((a: TimedValue, b: TimedValue) => b.timeMs - a.timeMs);
 
             if (freshPm25.length === 0) {
               continue;
@@ -263,12 +266,12 @@ export default async function handler(
                 return { value: m.value, timeMs };
               })
               .filter(
-                (m) =>
+                (m: TimedValue) =>
                   typeof m.value === 'number' &&
                   m.timeMs > 0 &&
                   now - m.timeMs <= threeHoursMs,
               )
-              .sort((a, b) => b.timeMs - a.timeMs);
+              .sort((a: TimedValue, b: TimedValue) => b.timeMs - a.timeMs);
 
             const pm10Val =
               freshPm10.length > 0
@@ -359,8 +362,7 @@ export default async function handler(
             station: 'Model grid',
             distanceKm: 0,
             timestamp: readingTimestamp,
-            fallbackReason,
-            keyPresent,
+            ...(exposeDiagnostics ? { fallbackReason, keyPresent } : {}),
           };
           return res.status(200).json(result);
         }
@@ -373,7 +375,6 @@ export default async function handler(
   // 3. If BOTH sources fail, return an error
   return res.status(502).json({
     error: "We couldn't fetch the air reading right now",
-    fallbackReason,
-    keyPresent,
+    ...(exposeDiagnostics ? { fallbackReason, keyPresent } : {}),
   });
 }
