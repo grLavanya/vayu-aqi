@@ -220,7 +220,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       model,
       cacheHit: false,
     };
-    serverPlanCache.set(cacheKey, { plan: responsePlan, expiresAt: now + CACHE_TTL_MS });
+    // Do not cache fallback plans: a transient Gemini failure must not stick for 30 minutes.
     return res.status(200).json(responsePlan);
   }
 }
