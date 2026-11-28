@@ -31,8 +31,6 @@ AQI values come from live stations, so exact numbers change. Check the band word
 | `/api/aqi?lat=51.5&lon=-0.12` | Rejected: coordinates must be inside India |
 | Run locally without `GEMINI_API_KEY` | Rule-based plan with a "Standard guidance" note |
 
-Developer preview: add `?dev=1` to the URL to see the plan source badge (`gemini` or `rules`) and to preview bands with simulated AQI. Simulated values are for UI testing only.
-
 ---
 
 ## How GenAI is used
